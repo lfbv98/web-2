@@ -42,7 +42,7 @@ jobs:
                 name: Deleted last configmap
             - run:
                 command: kubectl create configmap web2-page --from-file=web2/ --namespace ingress-basic
-                name: Deleted update configmap
+                name: Create new configmap
             - run:
                 command: kubectl scale --replicas=0 deployment web2 --namespace ingress-basic
                 name: Remove all the replicas
