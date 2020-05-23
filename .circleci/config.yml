@@ -26,7 +26,7 @@ jobs:
             command: kubectl scale --replicas=0 deployment web2 --namespace ingress-basic
             name: Remove all the replicas
         - run:
-            command: kubectl scale --replicas=replica_spec deployment web2 --namespace ingress-basic
+            command: kubectl scale --replicas=$replica_spec deployment web2 --namespace ingress-basic
             name: Restart the replicas
     approval-job:
     login-and-production-deploy:
