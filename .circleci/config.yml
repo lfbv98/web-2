@@ -20,7 +20,7 @@ jobs:
             command: kubectl create configmap web2-page --from-file=web2/ --namespace ingress-basic
             name: Deleted update configmap
         - run:
-            command: replica_spec=$(kubectl get deployment/applicatiom -o jsonpath='{.spec.replicas}')
+            command: replica_spec=$(kubectl get deployment/web2 --namespace ingress-basic -o jsonpath='{.spec.replicas}')
             name: Save current number of replicas
         - run:
             command: kubectl scale --replicas=0 deployment web2 --namespace ingress-basic
