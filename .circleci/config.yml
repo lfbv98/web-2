@@ -1,13 +1,71 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine. See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
-# Use a package of configuration called an orb.
 orbs:
-  # Declare a dependency on the welcome-orb
-  welcome: circleci/welcome-orb@0.4.1
-# Orchestrate or schedule a set of jobs
+  azure-aks: circleci/azure-aks@0.2.1
+jobs:
+    login-and-development-deploy:
+        executor: azure-aks/azure-docker
+        steps:
+        - checkout
+        - run:
+            command: az login -u ${USER} -p ${PASS}
+            name: Sign In to Azure CLI
+        - azure-aks/update-kubeconfig-with-credentials:
+            cluster-name: cluster
+            install-kubectl: true
+            resource-group: Ubuntu
+        - run:
+            command: kubectl delete configmap web2-page --namespace ingress-basic
+            name: Deleted last configmap
+        - run:
+            command: kubectl create configmap web2-page --from-file=web2/ --namespace ingress-basic
+            name: Deleted update configmap
+        - run:
+            command: kubectl scale --replicas=0 deployment web2 --namespace ingress-basic
+            name: Remove all the replicas
+        - run:
+            command: kubectl scale --replicas=1 deployment web2 --namespace ingress-basic
+            name: Restart the replicas
+    approval-job:
+    login-and-production-deploy:
+        executor: azure-aks/azure-docker
+        steps:
+            - checkout
+            - run:
+                command: az login -u ${USER} -p ${PASS}
+                name: Sign In to Azure CLI
+            - azure-aks/update-kubeconfig-with-credentials:
+                cluster-name: production
+                install-kubectl: true
+                resource-group: Produc
+            - run:
+                command: kubectl delete configmap web2-page --namespace ingress-basic
+                name: Deleted last configmap
+            - run:
+                command: kubectl create configmap web2-page --from-file=web2/ --namespace ingress-basic
+                name: Deleted update configmap
+            - run:
+                command: kubectl scale --replicas=0 deployment web2 --namespace ingress-basic
+                name: Remove all the replicas
+            - run:
+                command: kubectl scale --replicas=1 deployment web2 --namespace ingress-basic
+                name: Restart the replicas
 workflows:
-  # Name the workflow "welcome"
-  welcome:
-    # Run the welcome/run job in its own container
-    jobs:
-      - welcome/run
+    build-and-test:
+      jobs:
+        - login-and-development-deploy:
+            filters:
+                branches:
+                    only: circleci-project-setup
+        - approval-job:
+            type: approval
+            requires:
+                - login-and-development-deploy
+            filters:
+              branches:
+                  only: circleci-project-setup
+        - login-and-production-deploy:
+            filters:
+                branches:
+                    only: circleci-project-setup
+            requires:
+                - approval-job
